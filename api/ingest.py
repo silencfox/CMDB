@@ -1,22 +1,18 @@
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
-
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import OllamaEmbeddings
-from langchain_ollama import OllamaEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 import os
 
-# Configurar embeddings
 embedding = OllamaEmbeddings(model="mistral", base_url="http://ollama:11434")
 
-# Carpeta con tus documentos
 DATA_PATH = "./documents"
-
 docs = []
 
-# Procesar cada archivo
 for filename in os.listdir(DATA_PATH):
     filepath = os.path.join(DATA_PATH, filename)
+    print(f"Processing file: {filepath}")
+
     if filename.endswith(".pdf"):
         loader = PyPDFLoader(filepath)
     elif filename.endswith(".docx"):
@@ -24,16 +20,21 @@ for filename in os.listdir(DATA_PATH):
     elif filename.endswith(".txt"):
         loader = TextLoader(filepath)
     else:
+        print(f"Unsupported file type: {filename}")
         continue
 
-    docs.extend(loader.load())
+    loaded_docs = loader.load()
+    print(f"Loaded {len(loaded_docs)} documents from {filename}")
+    docs.extend(loaded_docs)
 
-# Split en chunks
+print(f"Total documents loaded: {len(docs)}")
+
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
 split_docs = text_splitter.split_documents(docs)
+print(f"Total chunks created: {len(split_docs)}")
 
-# Guardar en ChromaDB
-db = Chroma.from_documents(split_docs, embedding, persist_directory="/chroma")
-db.persist()
+# Load existing DB and add new documents
+db = Chroma(persist_directory="/chroma", embedding_function=embedding)
+db.add_documents(split_docs)
 
-print(f"{len(split_docs)} documents loaded and indexed.")
+print(f"{len(split_docs)} chunks added to vector store.")

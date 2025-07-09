@@ -10,3 +10,9 @@ docker exec -it ollama ollama list
 docker exec -it knowledge_api python ingest.py
 
 curl -X POST "http://localhost:8001/ask" -H "Content-Type: application/json" -d "{\"question\":\"¿Cuál es el procedimiento de instalación?\"}"
+
+http://localhost:7860
+
+## eliminar chunks
+#docker exec -it knowledge_api rm -rf /chroma/*
+

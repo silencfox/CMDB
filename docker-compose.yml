@@ -20,9 +20,19 @@ services:
     container_name: knowledge_api
     ports:
       - "8001:8001"
+    volumes:
+      - ./api/documents:/app/documents
     depends_on:
       - ollama
       - chromadb
+  ui:
+    build: ./api
+    command: ["python", "ui.py"]
+    container_name: knowledge_ui
+    ports:
+      - "7860:7860"
+    depends_on:
+      - api
 
 volumes:
   ollama_data:
