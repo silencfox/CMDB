@@ -1,0 +1,6 @@
+Como renovar una tarjeta de crédito:
+1.- Verificar integridad del archivo txt
+2.- pasar el archivo de texto plano por wsftp
+3.- limpiar contenido del archivo RENO en IBSBSCOBJ
+4.- copiar contenido desde la librería PASELIB hasta la IBSBSCOBJ
+5.- Ejecutar call de renovación TC
