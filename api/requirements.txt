@@ -8,4 +8,7 @@ unstructured
 pypdf
 python-docx
 gradio
-
+requests
+psycopg2-binary
+markdown
+beautifulsoup4

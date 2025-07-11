@@ -3,11 +3,16 @@ import hashlib
 import sqlite3
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader, TextLoader
 from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_ollama import OllamaEmbeddings  # ✅ Usa el paquete actualizado
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+import markdown
+from bs4 import BeautifulSoup
+import os
 
 # ⚡ Configuración de embeddings y vector store
 embedding = OllamaEmbeddings(model="mistral", base_url="http://ollama:11434")
+#embedding = OllamaEmbeddings(model="nomic-embed-text", base_url="http://ollama:11434")
+
 db = Chroma(persist_directory="/chroma", embedding_function=embedding)
 
 DATA_PATH = "./documents"
@@ -24,6 +29,11 @@ c.execute('''
 ''')
 conn.commit()
 
+def markdown_to_text(md_content):
+    html = markdown.markdown(md_content)
+    soup = BeautifulSoup(html, "html.parser")
+    return soup.get_text()
+    
 def file_hash(filepath):
     """Calcula hash SHA256 de un archivo completo."""
     hasher = hashlib.sha256()
@@ -54,11 +64,45 @@ for filename in os.listdir(DATA_PATH):
         loader = Docx2txtLoader(filepath)
     elif filename.endswith(".txt"):
         loader = TextLoader(filepath)
+    elif filename.endswith(".md"):
+        print(f"🔍 Leyendo archivo markdown: {filepath}")
+        with open(filepath, "r", encoding="utf-8") as f:
+            md_content = f.read()
+
+        print(f"📏 Longitud del contenido MD original: {len(md_content)}")
+
+        text_content = markdown_to_text(md_content)
+        print(f"📏 Longitud del texto parseado: {len(text_content)}")
+
+        root, ext = os.path.splitext(filepath)
+        # Crear la nueva ruta con extensión .txt
+        temp_txt = root + '.txt'
+        #temp_txt = filepath + ".tmp.txt"
+        with open(temp_txt, "w", encoding="utf-8") as f:
+            f.write(text_content)
+
+        print(f"✅ Archivo temporal creado: {temp_txt}")
+
+        loader = TextLoader(temp_txt)
+        #loaded_docs = list(loader.load())  # ⚠️ Forzamos la carga antes de eliminar
+
+        print(f"✅ Archivo temporal procesado correctamente: {temp_txt}")
+        #print(f"🔢 Total de documentos cargados desde temp: {len(loaded_docs)}")
+
+        #if os.path.exists(temp_txt):
+            #os.remove(temp_txt)
+            #print(f"🗑️ Archivo temporal eliminado: {temp_txt}")
+        #else:
+        #    print(f"⚠️ Archivo temporal no encontrado al intentar eliminar: {temp_txt}")
+            
+        os.remove(filepath)
     else:
         print(f"❌ Tipo de archivo no soportado: {filename}")
         continue
 
     loaded_docs = loader.load()
+
+    
     print(f"✅ {len(loaded_docs)} documentos cargados de {filename}")
 
     # 🔗 Agrega metadata con el hash

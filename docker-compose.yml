@@ -5,7 +5,7 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - ollama_data:/root/.ollama
+      - ./ollama_data:/root/.ollama
 
   chromadb:
     image: chromadb/chroma
@@ -13,7 +13,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - chroma_data:/chroma
+      - ./chroma_data:/chroma
 
   api:
     build: ./api
@@ -21,7 +21,8 @@ services:
     ports:
       - "8001:8001"
     volumes:
-      - ./api/documents:/app/documents
+      - ./api:/app
+      - ./chroma:/chroma
     depends_on:
       - ollama
       - chromadb
@@ -33,10 +34,37 @@ services:
       - "7860:7860"
     depends_on:
       - api
+  # ⚡ Wiki.js database
+  wikidb:
+    image: postgres:15
+    container_name: wikidb
+    restart: always
+    environment:
+      POSTGRES_DB: wikijs
+      POSTGRES_USER: wikijs
+      POSTGRES_PASSWORD: wikijsPass
+    volumes:
+      - wiki_db_data:/var/lib/postgresql/data
 
+  # ⚡ Wiki.js app
+  wiki:
+    image: requarks/wiki:latest
+    container_name: wiki
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: wikidb
+      DB_PORT: 5432
+      DB_USER: wikijs
+      DB_PASS: wikijsPass
+      DB_NAME: wikijs
+    depends_on:
+      - wikidb
 volumes:
-  ollama_data:
-  chroma_data:
-
+  #ollama_data:
+  #chroma_data:
+  wiki_db_data:
 ## docker compose up --build -d
 ## docker exec -it knowledge_api python ingest.py

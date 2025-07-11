@@ -1,0 +1,5 @@
+Que es Docker? Docker es un gestor de contenedores multi sistema operativo
+
+para crear un contenedor se utiliza Docker créate
+para descargar una imagen se usa Docker pull nombre_imagen
+para iniciar un contenedor se utiliza Docker run o Docker start
